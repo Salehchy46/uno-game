@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .card {
+    @apply w-24 h-32 rounded-lg shadow-md transition-transform hover:-translate-y-2 cursor-pointer;
+  }
+  .card-number {
+    @apply text-3xl font-bold;
+  }
+  .card-action {
+    @apply text-lg font-bold;
+  }
+}
