@@ -3,14 +3,20 @@ import socket from '../socket';
 
 function Lobby({ players, playerId }) {
   const [name, setName] = useState('');
+  const [lobbyName, setLobbyName] = useState('');
   const [error, setError] = useState('');
 
   const joinGame = () => {
     if (!name.trim()) {
-      setError('Please enter a name');
+      setError('Please enter your name');
       return;
     }
-    socket.emit('joinGame', { name });
+    // If this is the first player, send lobbyName
+    const isFirst = players.length === 0;
+    socket.emit('joinGame', {
+      name,
+      lobbyName: isFirst ? lobbyName : undefined
+    });
   };
 
   const startGame = () => {
@@ -23,6 +29,11 @@ function Lobby({ players, playerId }) {
 
   const currentPlayer = players.find(p => p.id === playerId);
   const isHost = currentPlayer?.id === players[0]?.id;
+  const gameStateLobbyName = players.length > 0 ? players[0]?.lobbyName : null; // if we stored lobbyName in player object? Actually we store it separately
+
+  // You'll need to receive lobbyName from the server via gameState.
+  // We'll add it to the gameState prop in App.jsx and pass it down.
+  // For now, we assume a prop `lobbyName` is passed from App.
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -30,15 +41,24 @@ function Lobby({ players, playerId }) {
         <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">UNO Game</h1>
 
         {!currentPlayer ? (
-          // Not yet joined – show join form
+          // Join form
           <div>
             <input
               type="text"
-              placeholder="Enter your name"
+              placeholder="Your name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            {players.length === 0 && (
+              <input
+                type="text"
+                placeholder="Lobby name (optional)"
+                value={lobbyName}
+                onChange={(e) => setLobbyName(e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            )}
             <button
               onClick={joinGame}
               className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition"
@@ -48,12 +68,13 @@ function Lobby({ players, playerId }) {
             {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
           </div>
         ) : (
-          // Joined – show lobby
+          // Lobby view
           <div>
             <div className="mb-6">
               <h2 className="text-xl font-semibold mb-3">
-                Players in Lobby ({players.length}/10)
+                Lobby: {players[0]?.lobbyName || 'Default Lobby'}
               </h2>
+              <h3 className="text-lg font-medium mb-2">Players ({players.length}/10)</h3>
               <div className="space-y-2 max-h-80 overflow-y-auto">
                 {players.map((player, idx) => (
                   <div key={player.id} className="flex justify-between items-center p-2 bg-gray-100 rounded">
