@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
+const SOCKET_URL = 'https://uno-game-server-2.onrender.com';
 const socket = io(SOCKET_URL);
 
 export default socket;

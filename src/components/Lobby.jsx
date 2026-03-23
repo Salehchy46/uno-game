@@ -22,14 +22,15 @@ function Lobby({ players, playerId }) {
   };
 
   const currentPlayer = players.find(p => p.id === playerId);
-  const maxPlayers = 10; // max allowed
+  const isHost = currentPlayer?.id === players[0]?.id;
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-md mx-auto bg-white rounded-lg shadow-xl p-6">
         <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">UNO Game</h1>
-        
+
         {!currentPlayer ? (
+          // Not yet joined – show join form
           <div>
             <input
               type="text"
@@ -47,27 +48,37 @@ function Lobby({ players, playerId }) {
             {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
           </div>
         ) : (
+          // Joined – show lobby
           <div>
             <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-3">Players in Lobby ({players.length}/{maxPlayers})</h2>
+              <h2 className="text-xl font-semibold mb-3">
+                Players in Lobby ({players.length}/10)
+              </h2>
               <div className="space-y-2 max-h-80 overflow-y-auto">
                 {players.map((player, idx) => (
                   <div key={player.id} className="flex justify-between items-center p-2 bg-gray-100 rounded">
-                    <span>{player.name}</span>
-                    {player.id === playerId && <span className="text-blue-500 text-sm">(You)</span>}
+                    <div className="flex items-center gap-2">
+                      <span>{player.name}</span>
+                      {player.id === playerId && <span className="text-blue-500 text-sm">(You)</span>}
+                      {idx === 0 && <span className="text-yellow-600 text-sm font-semibold">👑 Host</span>}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
-            
-            {/* Only the first player can start the game (host) */}
-            {currentPlayer.id === players[0]?.id && (
+
+            {isHost && (
               <button
                 onClick={startGame}
                 className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition"
               >
                 Start Game
               </button>
+            )}
+            {!isHost && players.length > 0 && (
+              <p className="text-center text-gray-500 text-sm mt-2">
+                Waiting for host to start the game...
+              </p>
             )}
           </div>
         )}
