@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import socket from '../socket';
 
-function Lobby({ players, playerId }) {
+function Lobby({ players, playerId, lobbyName }) {
   const [name, setName] = useState('');
-  const [lobbyName, setLobbyName] = useState('');
+  const [newLobbyName, setNewLobbyName] = useState(''); // separate for first player input
   const [error, setError] = useState('');
 
   const joinGame = () => {
@@ -11,11 +11,11 @@ function Lobby({ players, playerId }) {
       setError('Please enter your name');
       return;
     }
-    // If this is the first player, send lobbyName
+    // If this is the first player, send the lobby name (if provided)
     const isFirst = players.length === 0;
     socket.emit('joinGame', {
       name,
-      lobbyName: isFirst ? lobbyName : undefined
+      lobbyName: isFirst ? newLobbyName : undefined
     });
   };
 
@@ -29,11 +29,6 @@ function Lobby({ players, playerId }) {
 
   const currentPlayer = players.find(p => p.id === playerId);
   const isHost = currentPlayer?.id === players[0]?.id;
-  const gameStateLobbyName = players.length > 0 ? players[0]?.lobbyName : null; // if we stored lobbyName in player object? Actually we store it separately
-
-  // You'll need to receive lobbyName from the server via gameState.
-  // We'll add it to the gameState prop in App.jsx and pass it down.
-  // For now, we assume a prop `lobbyName` is passed from App.
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -54,8 +49,8 @@ function Lobby({ players, playerId }) {
               <input
                 type="text"
                 placeholder="Lobby name (optional)"
-                value={lobbyName}
-                onChange={(e) => setLobbyName(e.target.value)}
+                value={newLobbyName}
+                onChange={(e) => setNewLobbyName(e.target.value)}
                 className="w-full px-4 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             )}
@@ -72,7 +67,7 @@ function Lobby({ players, playerId }) {
           <div>
             <div className="mb-6">
               <h2 className="text-xl font-semibold mb-3">
-                Lobby: {players[0]?.lobbyName || 'Default Lobby'}
+                Lobby: {lobbyName || 'Default Lobby'}
               </h2>
               <h3 className="text-lg font-medium mb-2">Players ({players.length}/10)</h3>
               <div className="space-y-2 max-h-80 overflow-y-auto">
