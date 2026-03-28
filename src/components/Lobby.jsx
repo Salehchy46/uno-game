@@ -1,21 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import socket from '../socket';
 
 function Lobby({ players, playerId, lobbyName }) {
   const [name, setName] = useState('');
-  const [newLobbyName, setNewLobbyName] = useState(''); // separate for first player input
+  const [newLobbyName, setNewLobbyName] = useState('');
   const [error, setError] = useState('');
+  const [autoJoinDone, setAutoJoinDone] = useState(false); // prevent multiple auto-joins
+
+  // Load stored token from localStorage
+  const storedToken = localStorage.getItem('uno_token');
+
+  // Listen for token from server (new players)
+  useEffect(() => {
+    socket.on('setToken', ({ token }) => {
+      localStorage.setItem('uno_token', token);
+    });
+
+    return () => socket.off('setToken');
+  }, []);
+
+  // Auto‑reconnect if we have a token and we haven't already tried
+  useEffect(() => {
+    if (!autoJoinDone && storedToken && players.length === 0) {
+      // If we have a token and the lobby is empty (no players yet), attempt reconnect
+      socket.emit('joinGame', { token: storedToken });
+      setAutoJoinDone(true);
+    }
+  }, [autoJoinDone, storedToken, players.length]);
 
   const joinGame = () => {
     if (!name.trim()) {
       setError('Please enter your name');
       return;
     }
-    // If this is the first player, send the lobby name (if provided)
+
     const isFirst = players.length === 0;
     socket.emit('joinGame', {
       name,
-      lobbyName: isFirst ? newLobbyName : undefined
+      lobbyName: isFirst ? newLobbyName : undefined,
+      token: storedToken || undefined, // send token if exists (for new players, we won't have one yet)
     });
   };
 
@@ -36,7 +59,7 @@ function Lobby({ players, playerId, lobbyName }) {
         <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">UNO Game</h1>
 
         {!currentPlayer ? (
-          // Join form
+          // Join form (shown only if we are not yet in the lobby)
           <div>
             <input
               type="text"
